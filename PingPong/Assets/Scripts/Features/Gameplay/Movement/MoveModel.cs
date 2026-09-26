@@ -23,5 +23,5 @@ public class MoveModel
         Speed = speed;
     }
 
-    public void ChangePos(float dir, float dt) => Pos = Speed * dir * dt;
+    public void ChangePos(float dir, float dt) => Pos += Speed * dir * dt;
 }
