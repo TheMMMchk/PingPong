@@ -23,7 +23,7 @@ public class BallHitService : IDisposable
         if (!collision.gameObject.CompareTag("Player"))
             return;
 
-        _physicsView.Bounce(collision.GetContact(0).normal);
+        _physicsView.BounceFromPlayer();
         Debug.Log("мячик отскочил");
     }
 }
