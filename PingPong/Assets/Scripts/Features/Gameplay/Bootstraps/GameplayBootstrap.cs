@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 public class GameplayBootstrap : MonoBehaviour
@@ -10,20 +9,34 @@ public class GameplayBootstrap : MonoBehaviour
     [SerializeField] private MoveView enemyMoveView;
 
     [SerializeField] private BallHitComponent ballHitComponent;
-
+    [SerializeField] private BallPhysicsView ballPhysicsView;
+    [SerializeField] private float ballSpeed = 6f;
+    [SerializeField] private Vector2 ballStartDirection = new Vector2(1f, 0.35f);
 
     private MoveController playerMoveController;
     private MoveController enemyMoveController;
     private BotMoveService _botMoveService;
-
+    private BallService _ballService;
+    private BallHitService _ballHitService;
 
     private void Awake()
     {
-
-
         InitPlayer();
         InitEnemy();
-        BallHitService ballHitService = new BallHitService(ballHitComponent);
+
+        _ballService = new BallService(
+            ballPhysicsView,
+            ballSpeed,
+            ballStartDirection);
+
+        _ballHitService = new BallHitService(ballHitComponent);
+
+        _ballService.Launch();
+    }
+
+    private void OnDestroy()
+    {
+        _ballHitService?.Dispose();
     }
 
     private void Update()
@@ -71,7 +84,7 @@ public class GameplayBootstrap : MonoBehaviour
         ScoreModel scoreModel = new ScoreModel();
         ScorePresenter scorePresenter = new ScorePresenter(scoreModel, playerScoreView);
 
-        scorePresenter.UpdateScoreText();   
+        scorePresenter.UpdateScoreText();
     }
 
     private void InitEnemyHp()
@@ -89,6 +102,4 @@ public class GameplayBootstrap : MonoBehaviour
 
         playerHpPresenter.UpdateHpText();
     }
-
-
 }
