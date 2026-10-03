@@ -9,16 +9,43 @@ public class BallPhysicsView : MonoBehaviour
         _rigidbody.linearVelocity = velocity;
     }
 
-    public void BounceFromPlayer()
+    public void BounceFromWall()
+    {
+        Vector2 velocity = _rigidbody.linearVelocity;
+
+        velocity.x = -velocity.x;
+
+        _rigidbody.linearVelocity = velocity;
+    }
+
+    public void BounceFromPaddle(Collider2D paddle)
     {
         Vector2 velocity = _rigidbody.linearVelocity;
         float speed = velocity.magnitude;
-        float horizontal = velocity.x;
-        float vertical = Mathf.Abs(velocity.y);
 
-        if (vertical < 0.01f)
-            vertical = speed;
+        if (speed < 0.01f)
+            return;
 
-        _rigidbody.linearVelocity = new Vector2(horizontal, vertical).normalized * speed;
+        float paddleHalfWidth = paddle.bounds.extents.x;
+        float hitOffset = 0f;
+
+        if (paddleHalfWidth > 0.01f)
+        {
+            hitOffset = (transform.position.x - paddle.bounds.center.x) / paddleHalfWidth;
+            hitOffset = Mathf.Clamp(hitOffset, -1f, 1f);
+        }
+
+        const float maxHorizontal = 0.9f;
+        const float minVertical = 0.25f;
+
+        float horizontal = hitOffset * maxHorizontal;
+        float vertical = Mathf.Sqrt(1f - horizontal * horizontal);
+
+        vertical = Mathf.Max(vertical, minVertical);
+
+        float directionY = transform.position.y >= paddle.bounds.center.y ? 1f : -1f;
+
+        Vector2 direction = new Vector2(horizontal, vertical * directionY).normalized;
+        _rigidbody.linearVelocity = direction * speed;
     }
 }
