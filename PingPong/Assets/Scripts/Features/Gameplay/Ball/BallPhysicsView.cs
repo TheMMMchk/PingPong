@@ -6,15 +6,13 @@ public class BallPhysicsView : MonoBehaviour
 
     public void Launch(Vector2 velocity)
     {
-        _rigidbody.linearVelocity = velocity;
+        _rigidbody.linearVelocity = velocity.normalized * velocity.magnitude;
     }
 
     public void BounceFromWall()
     {
         Vector2 velocity = _rigidbody.linearVelocity;
-
         velocity.x = -velocity.x;
-
         _rigidbody.linearVelocity = velocity;
     }
 
@@ -39,13 +37,19 @@ public class BallPhysicsView : MonoBehaviour
         const float minVertical = 0.25f;
 
         float horizontal = hitOffset * maxHorizontal;
-        float vertical = Mathf.Sqrt(1f - horizontal * horizontal);
-
+        float vertical = Mathf.Sqrt(Mathf.Max(0f, 1f - horizontal * horizontal));
         vertical = Mathf.Max(vertical, minVertical);
 
         float directionY = transform.position.y >= paddle.bounds.center.y ? 1f : -1f;
 
         Vector2 direction = new Vector2(horizontal, vertical * directionY).normalized;
+
+        if (Mathf.Abs(direction.y) < minVertical)
+        {
+            direction.y = Mathf.Sign(direction.y) * minVertical;
+            direction.Normalize();
+        }
+
         _rigidbody.linearVelocity = direction * speed;
     }
 }
