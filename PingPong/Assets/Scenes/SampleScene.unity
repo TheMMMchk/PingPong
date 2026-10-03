@@ -1190,7 +1190,7 @@ BoxCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: ef8fed75ea1e467da7758125409e5aa9, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1239,6 +1239,7 @@ GameObject:
   - component: {fileID: 2044099592}
   - component: {fileID: 2044099591}
   - component: {fileID: 2044099590}
+  - component: {fileID: 2044099593}
   m_Layer: 0
   m_Name: Circle
   m_TagString: Untagged
@@ -1332,6 +1333,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 540c35182785d074a84fd9774cac1e94, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BallHitComponent
+--- !u!114 &2044099593
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2044099587}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e715611dd4d7476188c323d5eda5bb0d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BallPhysicsView
+  _rigidbody: {fileID: 2044099592}
 --- !u!58 &2044099591
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -1383,7 +1397,7 @@ Rigidbody2D:
   m_Mass: 1
   m_LinearDamping: 0
   m_AngularDamping: 0.05
-  m_GravityScale: 1
+  m_GravityScale: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -1393,7 +1407,7 @@ Rigidbody2D:
     m_Bits: 0
   m_Interpolate: 0
   m_SleepingMode: 1
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
   m_Constraints: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
