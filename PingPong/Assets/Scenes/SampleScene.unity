@@ -750,8 +750,8 @@ MonoBehaviour:
   playerScoreView: {fileID: 51909122}
   playerPaddleCollider: {fileID: 2029457641}
   enemyPaddleCollider: {fileID: 520659767}
-  leftWallCollider: {fileID: 300000002}
-  rightWallCollider: {fileID: 300000004}
+  leftWallCollider: {fileID: 300000003}
+  rightWallCollider: {fileID: 300000012}
   playerMoveView: {fileID: 2029457638}
   enemyMoveView: {fileID: 520659764}
   ballHitComponent: {fileID: 2044099590}
@@ -1537,7 +1537,7 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 0.2, y: 10}
   m_EdgeRadius: 0
---- !u!1 &300000003
+--- !u!1 &300000010
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1554,13 +1554,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &300000004
+--- !u!4 &300000011
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 300000003}
+  m_GameObject: {fileID: 300000010}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 4.5, y: 0, z: 0}
@@ -1569,13 +1569,13 @@ Transform:
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   
---- !u!61 &300000005
+--- !u!61 &300000012
 BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 300000003}
+  m_GameObject: {fileID: 300000010}
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
@@ -1624,4 +1624,4 @@ SceneRoots:
   - {fileID: 520659766}
   - {fileID: 2044099589}
   - {fileID: 300000002}
-  - {fileID: 300000004}
+  - {fileID: 300000011}
