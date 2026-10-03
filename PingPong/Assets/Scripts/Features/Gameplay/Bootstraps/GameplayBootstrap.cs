@@ -10,8 +10,12 @@ public class GameplayBootstrap : MonoBehaviour
 
     [SerializeField] private BallHitComponent ballHitComponent;
     [SerializeField] private BallPhysicsView ballPhysicsView;
+    [SerializeField] private Collider2D playerPaddleCollider;
+    [SerializeField] private Collider2D enemyPaddleCollider;
+    [SerializeField] private Collider2D leftWallCollider;
+    [SerializeField] private Collider2D rightWallCollider;
     [SerializeField] private float ballSpeed = 6f;
-    [SerializeField] private Vector2 ballStartDirection = new Vector2(1f, 0.35f);
+    [SerializeField] private Vector2 ballStartDirection = new Vector2(0.2f, -1f);
 
     private MoveController playerMoveController;
     private MoveController enemyMoveController;
@@ -29,7 +33,13 @@ public class GameplayBootstrap : MonoBehaviour
             ballSpeed,
             ballStartDirection);
 
-        _ballHitService = new BallHitService(ballHitComponent, ballPhysicsView);
+        _ballHitService = new BallHitService(
+            ballHitComponent,
+            ballPhysicsView,
+            playerPaddleCollider,
+            enemyPaddleCollider,
+            leftWallCollider,
+            rightWallCollider);
 
         _ballService.Launch();
     }
