@@ -29,7 +29,7 @@ public class GameplayBootstrap : MonoBehaviour
             ballSpeed,
             ballStartDirection);
 
-        _ballHitService = new BallHitService(ballHitComponent);
+        _ballHitService = new BallHitService(ballHitComponent, ballPhysicsView);
 
         _ballService.Launch();
     }
