@@ -9,9 +9,16 @@ public class BallPhysicsView : MonoBehaviour
         _rigidbody.linearVelocity = velocity;
     }
 
-    public void Bounce(Vector2 normal)
+    public void BounceFromPlayer()
     {
-        Vector2 velocity = Vector2.Reflect(_rigidbody.linearVelocity, normal);
-        _rigidbody.linearVelocity = velocity;
+        Vector2 velocity = _rigidbody.linearVelocity;
+        float speed = velocity.magnitude;
+        float horizontal = velocity.x;
+        float vertical = Mathf.Abs(velocity.y);
+
+        if (vertical < 0.01f)
+            vertical = speed;
+
+        _rigidbody.linearVelocity = new Vector2(horizontal, vertical).normalized * speed;
     }
 }
