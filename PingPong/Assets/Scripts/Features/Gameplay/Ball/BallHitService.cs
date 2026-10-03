@@ -20,10 +20,16 @@ public class BallHitService : IDisposable
 
     private void Hit(Collision2D collision)
     {
-        if (!collision.gameObject.CompareTag("Player"))
-            return;
+        ContactPoint2D contact = collision.GetContact(0);
+        Vector2 normal = contact.normal;
 
-        _physicsView.BounceFromPlayer();
+        if (Mathf.Abs(normal.x) > Mathf.Abs(normal.y))
+        {
+            _physicsView.BounceFromWall();
+            return;
+        }
+
+        _physicsView.BounceFromPaddle(collision.collider);
         Debug.Log("мячик отскочил");
     }
 }
