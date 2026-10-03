@@ -8,4 +8,10 @@ public class BallPhysicsView : MonoBehaviour
     {
         _rigidbody.linearVelocity = velocity;
     }
+
+    public void Bounce(Vector2 normal)
+    {
+        Vector2 velocity = Vector2.Reflect(_rigidbody.linearVelocity, normal);
+        _rigidbody.linearVelocity = velocity;
+    }
 }
