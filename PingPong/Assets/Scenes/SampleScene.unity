@@ -706,6 +706,9 @@ MonoBehaviour:
   playerMoveView: {fileID: 2029457638}
   enemyMoveView: {fileID: 520659764}
   ballHitComponent: {fileID: 2044099590}
+  ballPhysicsView: {fileID: 2044099593}
+  ballSpeed: 6
+  ballStartDirection: {x: 1, y: 0.35}
 --- !u!4 &627103623
 Transform:
   m_ObjectHideFlags: 0
