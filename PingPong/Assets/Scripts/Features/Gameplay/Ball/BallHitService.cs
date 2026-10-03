@@ -5,11 +5,26 @@ public class BallHitService : IDisposable
 {
     private readonly BallHitComponent _hitComponent;
     private readonly BallPhysicsView _physicsView;
+    private readonly Collider2D _playerPaddle;
+    private readonly Collider2D _enemyPaddle;
+    private readonly Collider2D _leftWall;
+    private readonly Collider2D _rightWall;
 
-    public BallHitService(BallHitComponent hitComponent, BallPhysicsView physicsView)
+    public BallHitService(
+        BallHitComponent hitComponent,
+        BallPhysicsView physicsView,
+        Collider2D playerPaddle,
+        Collider2D enemyPaddle,
+        Collider2D leftWall,
+        Collider2D rightWall)
     {
         _hitComponent = hitComponent;
         _physicsView = physicsView;
+        _playerPaddle = playerPaddle;
+        _enemyPaddle = enemyPaddle;
+        _leftWall = leftWall;
+        _rightWall = rightWall;
+
         _hitComponent.OnCollision += Hit;
     }
 
@@ -20,16 +35,18 @@ public class BallHitService : IDisposable
 
     private void Hit(Collision2D collision)
     {
-        ContactPoint2D contact = collision.GetContact(0);
-        Vector2 normal = contact.normal;
+        Collider2D otherCollider = collision.collider;
 
-        if (Mathf.Abs(normal.x) > Mathf.Abs(normal.y))
+        if (otherCollider == _leftWall || otherCollider == _rightWall)
         {
             _physicsView.BounceFromWall();
             return;
         }
 
-        _physicsView.BounceFromPaddle(collision.collider);
-        Debug.Log("мячик отскочил");
+        if (otherCollider == _playerPaddle || otherCollider == _enemyPaddle)
+        {
+            _physicsView.BounceFromPaddle(otherCollider);
+            Debug.Log("мячик отскочил");
+        }
     }
 }
