@@ -32,6 +32,13 @@ public class BallPhysicsView : MonoBehaviour
         _rigidbody.linearVelocity = velocity.normalized * _targetSpeed;
     }
 
+    public void StopAtCenter(Vector2 center)
+    {
+        _rigidbody.linearVelocity = Vector2.zero;
+        _rigidbody.angularVelocity = 0f;
+        _rigidbody.position = center;
+    }
+
     public void BounceFromPaddle(Collider2D paddle)
     {
         Vector2 velocity = _rigidbody.linearVelocity;
