@@ -4,6 +4,7 @@ public class BallImpactView : MonoBehaviour
 {
     private AudioSource _audio;
     private LineRenderer _ring;
+    private Material _ringMaterial;
     private float _ringTime;
     private SpriteRenderer _flash;
     private Color _originalColor;
@@ -82,7 +83,9 @@ public class BallImpactView : MonoBehaviour
         _ring.positionCount = 32;
         _ring.startWidth = strong ? 0.055f : 0.035f;
         _ring.endWidth = _ring.startWidth;
-        _ring.material = new Material(Shader.Find("Sprites/Default"));
+        _ringMaterial = new Material(Shader.Find("Sprites/Default"));
+        _ring.material = _ringMaterial;
+        _ring.sortingOrder = 20;
         Color c = strong ? new Color(1f, 0.65f, 0.2f, 1f) : new Color(0.4f, 0.85f, 1f, 1f);
         _ring.startColor = c;
         _ring.endColor = c;
@@ -116,5 +119,6 @@ public class BallImpactView : MonoBehaviour
         if (_strong != null) Destroy(_strong);
         if (_wall != null) Destroy(_wall);
         if (_ring != null) Destroy(_ring.gameObject);
+        if (_ringMaterial != null) Destroy(_ringMaterial);
     }
 }
