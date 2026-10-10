@@ -3,10 +3,8 @@ using UnityEngine;
 public class GameplayBootstrap : MonoBehaviour
 {
     [SerializeField] private HealthView playerHpView;
-
     [SerializeField] private MoveView playerMoveView;
     [SerializeField] private MoveView enemyMoveView;
-
     [SerializeField] private BallHitComponent ballHitComponent;
     [SerializeField] private BallPhysicsView ballPhysicsView;
     [SerializeField] private Collider2D playerPaddleCollider;
@@ -29,39 +27,24 @@ public class GameplayBootstrap : MonoBehaviour
     {
         InitPlayer();
         InitEnemy();
+        _ballService = new BallService(ballPhysicsView, ballSpeed, ballStartDirection);
 
-        _ballService = new BallService(
-            ballPhysicsView,
-            ballSpeed,
-            ballStartDirection);
+        BallImpactView impactView = ballHitComponent.GetComponent<BallImpactView>();
+        if (impactView == null)
+            impactView = ballHitComponent.gameObject.AddComponent<BallImpactView>();
 
         _ballHitService = new BallHitService(
-            ballHitComponent,
-            ballPhysicsView,
-            playerMoveView,
-            enemyMoveView,
-            playerPaddleCollider,
-            enemyPaddleCollider,
-            leftWallCollider,
-            rightWallCollider);
+            ballHitComponent, ballPhysicsView, impactView,
+            playerMoveView, enemyMoveView, playerPaddleCollider, enemyPaddleCollider,
+            leftWallCollider, rightWallCollider);
 
         _ballRoundService = new BallRoundService(
-            ballPhysicsView,
-            _ballService,
-            playerPaddleCollider,
-            enemyPaddleCollider,
-            _playerScorePresenter,
-            _enemyScorePresenter,
-            ballStartDirection,
-            Vector2.zero);
-
+            ballPhysicsView, _ballService, playerPaddleCollider, enemyPaddleCollider,
+            _playerScorePresenter, _enemyScorePresenter, ballStartDirection, Vector2.zero);
         _ballService.Launch();
     }
 
-    private void OnDestroy()
-    {
-        _ballHitService?.Dispose();
-    }
+    private void OnDestroy() { _ballHitService?.Dispose(); }
 
     private void Update()
     {
@@ -80,12 +63,7 @@ public class GameplayBootstrap : MonoBehaviour
     private void InitEnemyMovement()
     {
         MoveModel model = new MoveModel(4);
-        _botMoveService = new BotMoveService(
-            ballPhysicsView,
-            enemyMoveView,
-            leftWallCollider,
-            rightWallCollider);
-
+        _botMoveService = new BotMoveService(ballPhysicsView, enemyMoveView, leftWallCollider, rightWallCollider);
         enemyMoveController = new MoveController(model, enemyMoveView, _botMoveService);
     }
 
@@ -105,26 +83,26 @@ public class GameplayBootstrap : MonoBehaviour
 
     private void InitEnemyScore()
     {
-        ScoreModel enemyScoreModel = new ScoreModel();
-        _enemyScorePresenter = new ScorePresenter(enemyScoreModel);
+        ScoreModel model = new ScoreModel();
+        _enemyScorePresenter = new ScorePresenter(model);
     }
 
     private void InitPlayerScore()
     {
-        ScoreModel playerScoreModel = new ScoreModel();
-        _playerScorePresenter = new ScorePresenter(playerScoreModel);
+        ScoreModel model = new ScoreModel();
+        _playerScorePresenter = new ScorePresenter(model);
     }
 
     private void InitEnemyHp()
     {
-        HealthModel enemyHpModel = new HealthModel(50);
-        HealthPresenter enemyHpPresenter = new HealthPresenter(enemyHpModel);
+        HealthModel model = new HealthModel(50);
+        HealthPresenter presenter = new HealthPresenter(model);
     }
 
     private void InitPlayerHp()
     {
-        HealthModel playerHpModel = new HealthModel(50);
-        HealthPresenter playerHpPresenter = new HealthPresenter(playerHpModel, playerHpView);
-        playerHpPresenter.UpdateHpText();
+        HealthModel model = new HealthModel(50);
+        HealthPresenter presenter = new HealthPresenter(model, playerHpView);
+        presenter.UpdateHpText();
     }
 }
