@@ -5,6 +5,8 @@ public class BallHitService : IDisposable
 {
     private readonly BallHitComponent _hitComponent;
     private readonly BallPhysicsView _physicsView;
+    private readonly MoveView _playerMoveView;
+    private readonly MoveView _enemyMoveView;
     private readonly Collider2D _playerPaddle;
     private readonly Collider2D _enemyPaddle;
     private readonly Collider2D _leftWall;
@@ -13,6 +15,8 @@ public class BallHitService : IDisposable
     public BallHitService(
         BallHitComponent hitComponent,
         BallPhysicsView physicsView,
+        MoveView playerMoveView,
+        MoveView enemyMoveView,
         Collider2D playerPaddle,
         Collider2D enemyPaddle,
         Collider2D leftWall,
@@ -20,6 +24,8 @@ public class BallHitService : IDisposable
     {
         _hitComponent = hitComponent;
         _physicsView = physicsView;
+        _playerMoveView = playerMoveView;
+        _enemyMoveView = enemyMoveView;
         _playerPaddle = playerPaddle;
         _enemyPaddle = enemyPaddle;
         _leftWall = leftWall;
@@ -45,7 +51,15 @@ public class BallHitService : IDisposable
 
         if (otherCollider == _playerPaddle || otherCollider == _enemyPaddle)
         {
-            _physicsView.BounceFromPaddle(otherCollider);
+            MoveView paddleMoveView = otherCollider == _playerPaddle
+                ? _playerMoveView
+                : _enemyMoveView;
+
+            float paddleVelocityX = paddleMoveView != null
+                ? paddleMoveView.VelocityX
+                : 0f;
+
+            _physicsView.BounceFromPaddle(otherCollider, paddleVelocityX);
             Debug.Log("мячик отскочил");
         }
     }
