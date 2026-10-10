@@ -37,11 +37,11 @@ public class BallHitService : IDisposable
     {
         Collider2D otherCollider = collision.collider;
 
+        // Side-wall bounce is handled by the ball's PhysicsMaterial2D.
+        // Do not reverse the velocity here as well, or physics and code
+        // will both resolve the same collision.
         if (otherCollider == _leftWall || otherCollider == _rightWall)
-        {
-            _physicsView.BounceFromWall();
             return;
-        }
 
         if (otherCollider == _playerPaddle || otherCollider == _enemyPaddle)
         {
