@@ -5,6 +5,7 @@ public class BallPhysicsView : MonoBehaviour
     [SerializeField] private Rigidbody2D _rigidbody;
 
     private Collider2D _ballCollider;
+    private float _targetSpeed;
 
     public Vector2 Position => _rigidbody.position;
     public Vector2 Velocity => _rigidbody.linearVelocity;
@@ -15,26 +16,27 @@ public class BallPhysicsView : MonoBehaviour
         _ballCollider = _rigidbody.GetComponent<Collider2D>();
     }
 
-    public void Launch(Vector2 velocity)
+    private void FixedUpdate()
     {
-        _rigidbody.linearVelocity = velocity.normalized * velocity.magnitude;
+        // Collision solving can change the velocity after a collision callback.
+        // Keep the ball's speed constant while allowing its direction to change.
+        Vector2 velocity = _rigidbody.linearVelocity;
+
+        if (_targetSpeed > 0f && velocity.sqrMagnitude > 0.0001f)
+            _rigidbody.linearVelocity = velocity.normalized * _targetSpeed;
     }
 
-    public void BounceFromWall()
+    public void Launch(Vector2 velocity)
     {
-        Vector2 velocity = _rigidbody.linearVelocity;
-        float speed = velocity.magnitude;
-
-        velocity.x = -velocity.x;
-        _rigidbody.linearVelocity = velocity.normalized * speed;
+        _targetSpeed = velocity.magnitude;
+        _rigidbody.linearVelocity = velocity.normalized * _targetSpeed;
     }
 
     public void BounceFromPaddle(Collider2D paddle)
     {
         Vector2 velocity = _rigidbody.linearVelocity;
-        float speed = velocity.magnitude;
 
-        if (speed < 0.01f)
+        if (_targetSpeed <= 0f || velocity.sqrMagnitude < 0.0001f)
             return;
 
         float paddleHalfWidth = paddle.bounds.extents.x;
@@ -63,7 +65,6 @@ public class BallPhysicsView : MonoBehaviour
             direction.Normalize();
         }
 
-        // Preserve the ball's current speed after changing its direction.
-        _rigidbody.linearVelocity = direction.normalized * speed;
+        _rigidbody.linearVelocity = direction * _targetSpeed;
     }
 }
