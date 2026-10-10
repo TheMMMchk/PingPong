@@ -4,6 +4,17 @@ public class BallPhysicsView : MonoBehaviour
 {
     [SerializeField] private Rigidbody2D _rigidbody;
 
+    private Collider2D _ballCollider;
+
+    public Vector2 Position => _rigidbody.position;
+    public Vector2 Velocity => _rigidbody.linearVelocity;
+    public float Radius => _ballCollider != null ? _ballCollider.bounds.extents.x : 0f;
+
+    private void Awake()
+    {
+        _ballCollider = _rigidbody.GetComponent<Collider2D>();
+    }
+
     public void Launch(Vector2 velocity)
     {
         _rigidbody.linearVelocity = velocity.normalized * velocity.magnitude;
