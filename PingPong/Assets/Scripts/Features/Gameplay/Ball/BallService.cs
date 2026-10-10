@@ -15,7 +15,14 @@ public class BallService
 
     public void Launch()
     {
-        Vector2 direction = _startDirection.normalized;
-        _view.Launch(direction * _speed);
+        Launch(_startDirection);
+    }
+
+    public void Launch(Vector2 direction)
+    {
+        if (direction.sqrMagnitude < 0.0001f)
+            direction = _startDirection;
+
+        _view.Launch(direction.normalized * _speed);
     }
 }
