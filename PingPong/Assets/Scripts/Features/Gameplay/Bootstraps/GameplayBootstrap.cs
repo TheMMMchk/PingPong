@@ -3,7 +3,6 @@ using UnityEngine;
 public class GameplayBootstrap : MonoBehaviour
 {
     [SerializeField] private HealthView playerHpView;
-    [SerializeField] private ScoreView playerScoreView;
 
     [SerializeField] private MoveView playerMoveView;
     [SerializeField] private MoveView enemyMoveView;
@@ -22,6 +21,9 @@ public class GameplayBootstrap : MonoBehaviour
     private BotMoveService _botMoveService;
     private BallService _ballService;
     private BallHitService _ballHitService;
+    private BallRoundService _ballRoundService;
+    private ScorePresenter _playerScorePresenter;
+    private ScorePresenter _enemyScorePresenter;
 
     private void Awake()
     {
@@ -41,6 +43,16 @@ public class GameplayBootstrap : MonoBehaviour
             leftWallCollider,
             rightWallCollider);
 
+        _ballRoundService = new BallRoundService(
+            ballPhysicsView,
+            _ballService,
+            playerPaddleCollider,
+            enemyPaddleCollider,
+            _playerScorePresenter,
+            _enemyScorePresenter,
+            ballStartDirection,
+            Vector2.zero);
+
         _ballService.Launch();
     }
 
@@ -53,6 +65,7 @@ public class GameplayBootstrap : MonoBehaviour
     {
         playerMoveController.Tick(Time.deltaTime);
         enemyMoveController.Tick(Time.deltaTime);
+        _ballRoundService?.Tick(Time.deltaTime);
     }
 
     private void InitEnemy()
@@ -88,33 +101,28 @@ public class GameplayBootstrap : MonoBehaviour
         playerMoveController = new MoveController(model, playerMoveView, moveService);
     }
 
-    private static void InitEnemyScore()
+    private void InitEnemyScore()
     {
         ScoreModel enemyScoreModel = new ScoreModel();
-        ScorePresenter enemyScorePresenter = new ScorePresenter(enemyScoreModel);
+        _enemyScorePresenter = new ScorePresenter(enemyScoreModel);
     }
 
     private void InitPlayerScore()
     {
-        ScoreModel scoreModel = new ScoreModel();
-        ScorePresenter scorePresenter = new ScorePresenter(scoreModel, playerScoreView);
-
-        scorePresenter.UpdateScoreText();
+        ScoreModel playerScoreModel = new ScoreModel();
+        _playerScorePresenter = new ScorePresenter(playerScoreModel);
     }
 
     private void InitEnemyHp()
     {
         HealthModel enemyHpModel = new HealthModel(50);
-
-        HealthPresenter emenyHpPresenter = new HealthPresenter(enemyHpModel);
+        HealthPresenter enemyHpPresenter = new HealthPresenter(enemyHpModel);
     }
 
     private void InitPlayerHp()
     {
         HealthModel playerHpModel = new HealthModel(50);
-
         HealthPresenter playerHpPresenter = new HealthPresenter(playerHpModel, playerHpView);
-
         playerHpPresenter.UpdateHpText();
     }
 }
