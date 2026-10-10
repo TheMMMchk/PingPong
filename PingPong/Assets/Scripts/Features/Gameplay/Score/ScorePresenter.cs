@@ -5,6 +5,8 @@ public class ScorePresenter
 
     private ScoreView _scoreView;
 
+    public int Score => _scoreModel.Score;
+
     public ScorePresenter(ScoreModel scoreModel)
     {
         _scoreModel = scoreModel;
