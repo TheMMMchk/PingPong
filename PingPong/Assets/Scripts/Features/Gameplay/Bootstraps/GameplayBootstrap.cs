@@ -38,6 +38,8 @@ public class GameplayBootstrap : MonoBehaviour
         _ballHitService = new BallHitService(
             ballHitComponent,
             ballPhysicsView,
+            playerMoveView,
+            enemyMoveView,
             playerPaddleCollider,
             enemyPaddleCollider,
             leftWallCollider,
