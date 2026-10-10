@@ -65,7 +65,12 @@ public class GameplayBootstrap : MonoBehaviour
     private void InitEnemyMovement()
     {
         MoveModel model = new MoveModel(4);
-        _botMoveService = new BotMoveService();
+        _botMoveService = new BotMoveService(
+            ballPhysicsView,
+            enemyMoveView,
+            leftWallCollider,
+            rightWallCollider);
+
         enemyMoveController = new MoveController(model, enemyMoveView, _botMoveService);
     }
 
