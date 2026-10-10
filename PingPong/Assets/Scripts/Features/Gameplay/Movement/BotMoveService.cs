@@ -55,7 +55,7 @@ public class BotMoveService : IMoveable
         float maxX = _rightWall.bounds.min.x - _ball.Radius;
 
         if (maxX <= minX)
-            return Mathf.Clamp(projectedX, minX, maxX);
+            return ballPosition.x;
 
         // Reflect the projected position as many times as needed at the side walls.
         float fieldWidth = maxX - minX;
