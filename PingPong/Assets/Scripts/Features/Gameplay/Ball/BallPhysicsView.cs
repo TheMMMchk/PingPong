@@ -23,8 +23,10 @@ public class BallPhysicsView : MonoBehaviour
     public void BounceFromWall()
     {
         Vector2 velocity = _rigidbody.linearVelocity;
+        float speed = velocity.magnitude;
+
         velocity.x = -velocity.x;
-        _rigidbody.linearVelocity = velocity;
+        _rigidbody.linearVelocity = velocity.normalized * speed;
     }
 
     public void BounceFromPaddle(Collider2D paddle)
@@ -61,6 +63,7 @@ public class BallPhysicsView : MonoBehaviour
             direction.Normalize();
         }
 
-        _rigidbody.linearVelocity = direction * speed;
+        // Preserve the ball's current speed after changing its direction.
+        _rigidbody.linearVelocity = direction.normalized * speed;
     }
 }
