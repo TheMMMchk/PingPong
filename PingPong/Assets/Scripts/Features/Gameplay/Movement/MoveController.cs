@@ -18,6 +18,6 @@ public class MoveController
     {
         float dirX = _moveable.GetAxisX();
         _model.ChangePos(dirX, dt);
-        _view.ChangePos(_model.Pos);
+        _view.ChangePos(_model.Pos, dt);
     }
 }
