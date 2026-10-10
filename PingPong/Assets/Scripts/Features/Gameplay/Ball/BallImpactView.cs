@@ -16,6 +16,9 @@ public class BallImpactView : MonoBehaviour
     private AudioClip _hit;
     private AudioClip _strong;
     private AudioClip _wall;
+    private TrailRenderer _ballTrail;
+    private Material _trailMaterial;
+    private float _strongTrailTime;
 
     private SpriteRenderer _squashedSource;
     private bool _sourceWasEnabled;
@@ -47,6 +50,7 @@ public class BallImpactView : MonoBehaviour
         _hit = MakeClip(560f, 0.06f);
         _strong = MakeClip(850f, 0.09f);
         _wall = MakeClip(360f, 0.035f);
+        SetupBallTrail();
     }
 
     public void PlayPaddleHit(Vector2 point, Collider2D paddle, bool strong)
@@ -54,6 +58,12 @@ public class BallImpactView : MonoBehaviour
         ShowRing(point, strong);
         _audio.PlayOneShot(strong ? _strong : _hit, 0.7f);
         StartCameraShake(strong ? 0.09f : 0.045f, strong ? 0.13f : 0.09f);
+        if (strong && _ballTrail != null)
+        {
+            _ballTrail.startColor = new Color(1f, 0.62f, 0.22f, 0.95f);
+            _ballTrail.endColor = new Color(1f, 0.35f, 0.12f, 0f);
+            _strongTrailTime = 0.22f;
+        }
 
         if (paddle == null) return;
 
@@ -78,6 +88,7 @@ public class BallImpactView : MonoBehaviour
         UpdateFlash();
         UpdateSquash();
         UpdateCameraShake();
+        UpdateBallTrail();
     }
 
     private void FlashPaddle(SpriteRenderer renderer, bool strong)
@@ -171,6 +182,42 @@ public class BallImpactView : MonoBehaviour
         _squashObject = null;
         _squashTransform = null;
         _squashTime = 0f;
+    }
+
+    private void SetupBallTrail()
+    {
+        _ballTrail = GetComponent<TrailRenderer>();
+        if (_ballTrail == null) _ballTrail = gameObject.AddComponent<TrailRenderer>();
+
+        Shader shader = Shader.Find("Sprites/Default");
+        if (shader != null)
+        {
+            _trailMaterial = new Material(shader);
+            _ballTrail.material = _trailMaterial;
+        }
+
+        _ballTrail.time = 0.13f;
+        _ballTrail.startWidth = 0.085f;
+        _ballTrail.endWidth = 0f;
+        _ballTrail.minVertexDistance = 0.04f;
+        _ballTrail.numCornerVertices = 4;
+        _ballTrail.numCapVertices = 4;
+        _ballTrail.sortingOrder = 5;
+        _ballTrail.startColor = new Color(0.55f, 0.88f, 1f, 0.8f);
+        _ballTrail.endColor = new Color(0.55f, 0.88f, 1f, 0f);
+        _ballTrail.emitting = true;
+    }
+
+    private void UpdateBallTrail()
+    {
+        if (_ballTrail == null || _strongTrailTime <= 0f) return;
+
+        _strongTrailTime -= Time.deltaTime;
+        if (_strongTrailTime <= 0f)
+        {
+            _ballTrail.startColor = new Color(0.55f, 0.88f, 1f, 0.8f);
+            _ballTrail.endColor = new Color(0.55f, 0.88f, 1f, 0f);
+        }
     }
 
     private void StartCameraShake(float strength, float duration)
@@ -304,5 +351,6 @@ public class BallImpactView : MonoBehaviour
         if (_wall != null) Destroy(_wall);
         if (_ring != null) Destroy(_ring.gameObject);
         if (_ringMaterial != null) Destroy(_ringMaterial);
+        if (_trailMaterial != null) Destroy(_trailMaterial);
     }
 }
