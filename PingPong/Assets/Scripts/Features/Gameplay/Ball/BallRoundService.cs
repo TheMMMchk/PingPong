@@ -6,8 +6,7 @@ public class BallRoundService
     private readonly BallService _ballService;
     private readonly Collider2D _playerPaddle;
     private readonly Collider2D _enemyPaddle;
-    private readonly ScorePresenter _playerScore;
-    private readonly ScorePresenter _enemyScore;
+    private readonly ScorePresenter _scorePresenter;
     private readonly Vector2 _center;
 
     private Vector2 _nextServeDirection;
@@ -21,8 +20,7 @@ public class BallRoundService
         BallService ballService,
         Collider2D playerPaddle,
         Collider2D enemyPaddle,
-        ScorePresenter playerScore,
-        ScorePresenter enemyScore,
+        ScorePresenter scorePresenter,
         Vector2 initialServeDirection,
         Vector2 center)
     {
@@ -30,12 +28,11 @@ public class BallRoundService
         _ballService = ballService;
         _playerPaddle = playerPaddle;
         _enemyPaddle = enemyPaddle;
-        _playerScore = playerScore;
-        _enemyScore = enemyScore;
+        _scorePresenter = scorePresenter;
         _nextServeDirection = initialServeDirection.normalized;
         _center = center;
 
-        Debug.Log($"Счёт — Игрок: {_playerScore.Score} | Бот: {_enemyScore.Score}");
+        Debug.Log($"Счёт — Игрок: {_scorePresenter.PlayerScore} | Бот: {_scorePresenter.EnemyScore}");
     }
 
     public void Tick(float deltaTime)
@@ -69,21 +66,21 @@ public class BallRoundService
 
     private void AwardPointToEnemy()
     {
-        _enemyScore.AddScore(1);
+        _scorePresenter.AddEnemyScore(1);
         LogScore("Бот");
         PrepareNextServe();
     }
 
     private void AwardPointToPlayer()
     {
-        _playerScore.AddScore(1);
+        _scorePresenter.AddPlayerScore(1);
         LogScore("Игрок");
         PrepareNextServe();
     }
 
     private void LogScore(string pointWinner)
     {
-        Debug.Log($"Очко получает: {pointWinner}. Счёт — Игрок: {_playerScore.Score} | Бот: {_enemyScore.Score}");
+        Debug.Log($"Очко получает: {pointWinner}. Счёт — Игрок: {_scorePresenter.PlayerScore} | Бот: {_scorePresenter.EnemyScore}");
     }
 
     private void PrepareNextServe()

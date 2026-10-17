@@ -1,29 +1,38 @@
-﻿
 public class ScorePresenter
 {
-    private ScoreModel _scoreModel;
+    private readonly ScoreModel _playerScoreModel;
+    private readonly ScoreModel _enemyScoreModel;
+    private readonly ScoreView _scoreView;
 
-    private ScoreView _scoreView;
+    public int PlayerScore => _playerScoreModel.Score;
+    public int EnemyScore => _enemyScoreModel.Score;
 
-    public int Score => _scoreModel.Score;
-
-    public ScorePresenter(ScoreModel scoreModel)
+    public ScorePresenter(
+        ScoreModel playerScoreModel,
+        ScoreModel enemyScoreModel,
+        ScoreView scoreView)
     {
-        _scoreModel = scoreModel;
-    }
-
-    public ScorePresenter(ScoreModel scoreModel, ScoreView scoreView)
-    {
-        _scoreModel = scoreModel;
+        _playerScoreModel = playerScoreModel;
+        _enemyScoreModel = enemyScoreModel;
         _scoreView = scoreView;
-    }
 
-    public void AddScore(int score)
-    {
-        _scoreModel.AddScore(score);
         UpdateScoreText();
     }
 
-    public void UpdateScoreText() => _scoreView?.UpdateText(_scoreModel.Score);
-}
+    public void AddPlayerScore(int score)
+    {
+        _playerScoreModel.AddScore(score);
+        UpdateScoreText();
+    }
 
+    public void AddEnemyScore(int score)
+    {
+        _enemyScoreModel.AddScore(score);
+        UpdateScoreText();
+    }
+
+    private void UpdateScoreText()
+    {
+        _scoreView.UpdateText(PlayerScore, EnemyScore);
+    }
+}

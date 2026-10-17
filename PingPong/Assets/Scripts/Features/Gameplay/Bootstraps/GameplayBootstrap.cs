@@ -3,6 +3,7 @@ using UnityEngine;
 public class GameplayBootstrap : MonoBehaviour
 {
     [SerializeField] private HealthView playerHpView;
+    [SerializeField] private ScoreView scoreView;
     [SerializeField] private MoveView playerMoveView;
     [SerializeField] private MoveView enemyMoveView;
     [SerializeField] private BallHitComponent ballHitComponent;
@@ -20,11 +21,11 @@ public class GameplayBootstrap : MonoBehaviour
     private BallService _ballService;
     private BallHitService _ballHitService;
     private BallRoundService _ballRoundService;
-    private ScorePresenter _playerScorePresenter;
-    private ScorePresenter _enemyScorePresenter;
+    private ScorePresenter _scorePresenter;
 
     private void Awake()
     {
+        InitScore();
         InitPlayer();
         InitEnemy();
         _ballService = new BallService(ballPhysicsView, ballSpeed, ballStartDirection);
@@ -40,7 +41,7 @@ public class GameplayBootstrap : MonoBehaviour
 
         _ballRoundService = new BallRoundService(
             ballPhysicsView, _ballService, playerPaddleCollider, enemyPaddleCollider,
-            _playerScorePresenter, _enemyScorePresenter, ballStartDirection, Vector2.zero);
+            _scorePresenter, ballStartDirection, Vector2.zero);
         _ballService.Launch();
     }
 
@@ -53,11 +54,17 @@ public class GameplayBootstrap : MonoBehaviour
         _ballRoundService?.Tick(Time.deltaTime);
     }
 
+    private void InitScore()
+    {
+        ScoreModel playerScoreModel = new ScoreModel();
+        ScoreModel enemyScoreModel = new ScoreModel();
+        _scorePresenter = new ScorePresenter(playerScoreModel, enemyScoreModel, scoreView);
+    }
+
     private void InitEnemy()
     {
         InitEnemyMovement();
         InitEnemyHp();
-        InitEnemyScore();
     }
 
     private void InitEnemyMovement()
@@ -71,7 +78,6 @@ public class GameplayBootstrap : MonoBehaviour
     {
         InitPlayerMovement();
         InitPlayerHp();
-        InitPlayerScore();
     }
 
     private void InitPlayerMovement()
@@ -79,18 +85,6 @@ public class GameplayBootstrap : MonoBehaviour
         MoveModel model = new MoveModel(4);
         PlayerMoveService moveService = new PlayerMoveService();
         playerMoveController = new MoveController(model, playerMoveView, moveService);
-    }
-
-    private void InitEnemyScore()
-    {
-        ScoreModel model = new ScoreModel();
-        _enemyScorePresenter = new ScorePresenter(model);
-    }
-
-    private void InitPlayerScore()
-    {
-        ScoreModel model = new ScoreModel();
-        _playerScorePresenter = new ScorePresenter(model);
     }
 
     private void InitEnemyHp()
