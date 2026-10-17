@@ -182,7 +182,7 @@ public static class PauseSystemInstaller
             new Color(0.43f, 0.53f, 0.66f, 1f), bootstrap.OpenSettings);
 
         Button menuButton = CreateButton(
-            panel.transform, "ReturnToMenuButton", "В меню", font, uiSprite,
+            panel.transform, "ReturnToMenuButton", "Выход в меню", font, uiSprite,
             new Vector2(0f, -130f), new Color(0.23f, 0.14f, 0.18f, 1f),
             new Color(1f, 0.43f, 0.43f, 1f), bootstrap.ReturnToMenu);
 
