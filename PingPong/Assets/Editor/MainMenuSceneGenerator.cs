@@ -27,6 +27,9 @@ public static class MainMenuSceneGenerator
         SceneAsset existingMenu = AssetDatabase.LoadAssetAtPath<SceneAsset>(MainMenuScenePath);
         if (existingMenu != null)
         {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+                return;
+
             ConfigureBuildSettings();
             EditorSceneManager.OpenScene(MainMenuScenePath, OpenSceneMode.Single);
             Debug.Log("MainMenu already exists. Opened it and refreshed Build Settings; no duplicate scene was created.");
@@ -316,7 +319,10 @@ public static class MainMenuSceneGenerator
 
     private static GameObject CreateObject(string name, Transform parent, params System.Type[] components)
     {
-        GameObject instance = new GameObject(name, components);
+        GameObject instance = components == null || components.Length == 0
+            ? new GameObject(name)
+            : new GameObject(name, components);
+
         Undo.RegisterCreatedObjectUndo(instance, $"Create {name}");
 
         if (parent != null)
