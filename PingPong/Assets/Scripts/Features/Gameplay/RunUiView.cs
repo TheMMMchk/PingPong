@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 /// <summary>
@@ -23,6 +24,9 @@ public sealed class RunUiView : MonoBehaviour
     [SerializeField] private Button mainMenuButton;
 
     private readonly UpgradeDefinition[] _shownOptions = new UpgradeDefinition[3];
+    private UnityAction[] _upgradeButtonHandlers;
+    private UnityAction _restartHandler;
+    private UnityAction _mainMenuHandler;
 
     public event Action<UpgradeDefinition> UpgradeSelected;
     public event Action RestartRequested;
@@ -32,19 +36,27 @@ public sealed class RunUiView : MonoBehaviour
     {
         if (upgradeButtons != null)
         {
+            _upgradeButtonHandlers = new UnityAction[upgradeButtons.Length];
+
             for (int i = 0; i < upgradeButtons.Length; i++)
             {
                 int optionIndex = i;
-                if (upgradeButtons[i] != null)
-                    upgradeButtons[i].onClick.AddListener(() => SelectUpgrade(optionIndex));
+                if (upgradeButtons[i] == null)
+                    continue;
+
+                _upgradeButtonHandlers[i] = () => SelectUpgrade(optionIndex);
+                upgradeButtons[i].onClick.AddListener(_upgradeButtonHandlers[i]);
             }
         }
 
+        _restartHandler = () => RestartRequested?.Invoke();
+        _mainMenuHandler = () => MainMenuRequested?.Invoke();
+
         if (restartButton != null)
-            restartButton.onClick.AddListener(() => RestartRequested?.Invoke());
+            restartButton.onClick.AddListener(_restartHandler);
 
         if (mainMenuButton != null)
-            mainMenuButton.onClick.AddListener(() => MainMenuRequested?.Invoke());
+            mainMenuButton.onClick.AddListener(_mainMenuHandler);
 
         HideUpgradeSelection();
         HideRunResult();
@@ -58,7 +70,8 @@ public sealed class RunUiView : MonoBehaviour
             return;
         }
 
-        if (upgradeButtons == null || upgradeTitles == null || upgradeDescriptions == null
+        if (upgradeSelectionPanel == null
+            || upgradeButtons == null || upgradeTitles == null || upgradeDescriptions == null
             || upgradeButtons.Length < 3 || upgradeTitles.Length < 3 || upgradeDescriptions.Length < 3)
         {
             Debug.LogError("RunUiView is missing one or more upgrade UI references.", this);
@@ -123,21 +136,20 @@ public sealed class RunUiView : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (upgradeButtons != null)
+        if (upgradeButtons != null && _upgradeButtonHandlers != null)
         {
-            for (int i = 0; i < upgradeButtons.Length; i++)
+            for (int i = 0; i < upgradeButtons.Length && i < _upgradeButtonHandlers.Length; i++)
             {
-                int optionIndex = i;
-                if (upgradeButtons[i] != null)
-                    upgradeButtons[i].onClick.RemoveListener(() => SelectUpgrade(optionIndex));
+                if (upgradeButtons[i] != null && _upgradeButtonHandlers[i] != null)
+                    upgradeButtons[i].onClick.RemoveListener(_upgradeButtonHandlers[i]);
             }
         }
 
-        if (restartButton != null)
-            restartButton.onClick.RemoveAllListeners();
+        if (restartButton != null && _restartHandler != null)
+            restartButton.onClick.RemoveListener(_restartHandler);
 
-        if (mainMenuButton != null)
-            mainMenuButton.onClick.RemoveAllListeners();
+        if (mainMenuButton != null && _mainMenuHandler != null)
+            mainMenuButton.onClick.RemoveListener(_mainMenuHandler);
 
         UpgradeSelected = null;
         RestartRequested = null;
