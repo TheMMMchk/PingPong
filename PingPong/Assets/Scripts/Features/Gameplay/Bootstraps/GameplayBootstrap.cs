@@ -71,18 +71,11 @@ public class GameplayBootstrap : MonoBehaviour
         _runProgressionService.UpgradeSelectionRequested += HandleUpgradeSelectionRequested;
         _runProgressionService.RunFinished += HandleRunFinished;
 
-        if (runUiView == null)
-        {
-            Debug.LogError("RunUiView is not assigned. Run UI integration cannot be used.", this);
-        }
-        else
-        {
-            runUiView.UpgradeSelected += HandleUpgradeSelected;
-            runUiView.RestartRequested += RestartRun;
-            runUiView.MainMenuRequested += ReturnToMainMenu;
-            runUiView.HideUpgradeSelection();
-            runUiView.HideRunResult();
-        }
+        runUiView.UpgradeSelected += HandleUpgradeSelected;
+        runUiView.RestartRequested += RestartRun;
+        runUiView.MainMenuRequested += ReturnToMainMenu;
+        runUiView.HideUpgradeSelection();
+        runUiView.HideRunResult();
 
         // All event subscriptions are ready before the first serve begins.
         _ballService.Launch();
