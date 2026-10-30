@@ -344,6 +344,7 @@ public static class RogueliteRunUiInstaller
         Button restartButton,
         Button mainMenuButton)
     {
+        Undo.RecordObject(view, "Configure Roguelite Run UI");
         SerializedObject serializedView = new SerializedObject(view);
         serializedView.FindProperty("upgradeSelectionPanel").objectReferenceValue = upgradePanel;
 
@@ -355,7 +356,8 @@ public static class RogueliteRunUiInstaller
         serializedView.FindProperty("resultTitle").objectReferenceValue = resultTitle;
         serializedView.FindProperty("restartButton").objectReferenceValue = restartButton;
         serializedView.FindProperty("mainMenuButton").objectReferenceValue = mainMenuButton;
-        serializedView.ApplyModifiedPropertiesWithoutUndo();
+        serializedView.ApplyModifiedProperties();
+        EditorUtility.SetDirty(view);
     }
 
     private static void SetObjectArray(SerializedProperty property, Object[] values)
