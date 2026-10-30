@@ -273,7 +273,7 @@ public static class RogueliteRunUiInstaller
         text.fontStyle = style;
         text.color = color;
         text.alignment = TextAlignmentOptions.Center;
-        text.textWrappingMode = TextWrappingModes.Normal;
+        text.enableWordWrapping = true;
         text.raycastTarget = false;
         return text;
     }
