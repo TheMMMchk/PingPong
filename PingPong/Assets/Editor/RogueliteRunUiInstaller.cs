@@ -13,17 +13,19 @@ using UnityEngine.UI;
 /// </summary>
 public static class RogueliteRunUiInstaller
 {
+    private const string GameplayScenePath = "Assets/Scenes/SampleScene.unity";
     private const string CanvasName = "RogueliteRunCanvas";
+    private const int CanvasSortingOrder = 50;
 
     [MenuItem("Tools/PingPong/Install Roguelite Run UI")]
     private static void Install()
     {
         Scene scene = SceneManager.GetActiveScene();
-        if (!scene.IsValid() || !scene.isLoaded || scene.name != "SampleScene")
+        if (!scene.IsValid() || !scene.isLoaded || scene.path != GameplayScenePath)
         {
             EditorUtility.DisplayDialog(
                 "Roguelite Run UI",
-                "Open PingPong/Assets/Scenes/SampleScene.unity before running this command.",
+                "Open Assets/Scenes/SampleScene.unity before running this command.",
                 "OK");
             return;
         }
@@ -48,6 +50,8 @@ public static class RogueliteRunUiInstaller
         if (existingView != null)
         {
             AssignViewToBootstrap(bootstrap, existingView);
+            EditorSceneManager.MarkSceneDirty(scene);
+            Selection.activeGameObject = existingCanvas;
             EditorUtility.DisplayDialog(
                 "Roguelite Run UI",
                 "Roguelite Run UI already exists. Its Bootstrap reference has been checked.",
@@ -84,7 +88,7 @@ public static class RogueliteRunUiInstaller
 
         Debug.Log(
             "Roguelite Run UI created in SampleScene. Save the scene to keep the changes. " +
-            "The generated canvas uses sorting order 200 so it appears above the pause overlay.");
+            "The run canvas is above the HUD and below the existing pause overlay.");
     }
 
     private static GameplayBootstrap FindGameplayBootstrap(Scene scene)
@@ -116,10 +120,25 @@ public static class RogueliteRunUiInstaller
 
     private static void EnsureEventSystem(Scene scene)
     {
+        EventSystem existingEventSystem = null;
         foreach (GameObject root in scene.GetRootGameObjects())
         {
-            if (root.GetComponentInChildren<EventSystem>(true) != null)
-                return;
+            existingEventSystem = root.GetComponentInChildren<EventSystem>(true);
+            if (existingEventSystem != null)
+                break;
+        }
+
+        if (existingEventSystem != null)
+        {
+            if (existingEventSystem.GetComponent<InputSystemUIInputModule>() == null)
+            {
+                InputSystemUIInputModule inputModule =
+                    Undo.AddComponent<InputSystemUIInputModule>(existingEventSystem.gameObject);
+                inputModule.AssignDefaultActions();
+                EditorUtility.SetDirty(existingEventSystem.gameObject);
+            }
+
+            return;
         }
 
         GameObject eventSystem = new GameObject(
@@ -127,6 +146,7 @@ public static class RogueliteRunUiInstaller
             typeof(EventSystem),
             typeof(InputSystemUIInputModule));
         Undo.RegisterCreatedObjectUndo(eventSystem, "Create Run UI Event System");
+        eventSystem.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();
         SceneManager.MoveGameObjectToScene(eventSystem, scene);
     }
 
@@ -142,7 +162,7 @@ public static class RogueliteRunUiInstaller
 
         Canvas canvas = canvasObject.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 200;
+        canvas.sortingOrder = CanvasSortingOrder;
 
         CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
