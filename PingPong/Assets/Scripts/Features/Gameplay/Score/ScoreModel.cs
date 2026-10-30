@@ -1,4 +1,3 @@
-
 public class ScoreModel
 {
     private int _score;
@@ -16,5 +15,6 @@ public class ScoreModel
     }
 
     public void AddScore(int value) => Score += value;
-    
+
+    public void ResetScore() => Score = 0;
 }

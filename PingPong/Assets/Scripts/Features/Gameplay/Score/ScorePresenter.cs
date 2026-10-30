@@ -31,6 +31,13 @@ public class ScorePresenter
         UpdateScoreText();
     }
 
+    public void ResetScores()
+    {
+        _playerScoreModel.ResetScore();
+        _enemyScoreModel.ResetScore();
+        UpdateScoreText();
+    }
+
     private void UpdateScoreText()
     {
         _scoreView.UpdateText(PlayerScore, EnemyScore);
