@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameplayBootstrap : MonoBehaviour
 {
@@ -12,46 +13,155 @@ public class GameplayBootstrap : MonoBehaviour
     [SerializeField] private Collider2D enemyPaddleCollider;
     [SerializeField] private Collider2D leftWallCollider;
     [SerializeField] private Collider2D rightWallCollider;
+    [SerializeField] private RunUiView runUiView;
     [SerializeField] private float ballSpeed = 6f;
     [SerializeField] private Vector2 ballStartDirection = new Vector2(0.2f, -1f);
 
     private MoveController playerMoveController;
     private MoveController enemyMoveController;
+    private MoveModel _playerMoveModel;
+    private MoveModel _enemyMoveModel;
     private BotMoveService _botMoveService;
     private BallService _ballService;
     private BallHitService _ballHitService;
     private BallRoundService _ballRoundService;
     private ScorePresenter _scorePresenter;
+    private UpgradeService _upgradeService;
+    private RunProgressionService _runProgressionService;
+
+    private bool _waitingForUpgrade;
+    private bool _runFinished;
 
     private void Awake()
     {
         InitScore();
         InitPlayer();
         InitEnemy();
+
         _ballService = new BallService(ballPhysicsView, ballSpeed, ballStartDirection);
 
         BallImpactView impactView = ballHitComponent.GetComponent<BallImpactView>();
         if (impactView == null)
             impactView = ballHitComponent.gameObject.AddComponent<BallImpactView>();
 
+        _upgradeService = new UpgradeService(
+            _playerMoveModel, _enemyMoveModel, ballPhysicsView);
+
         _ballHitService = new BallHitService(
             ballHitComponent, ballPhysicsView, impactView,
             playerMoveView, enemyMoveView, playerPaddleCollider, enemyPaddleCollider,
-            leftWallCollider, rightWallCollider);
+            leftWallCollider, rightWallCollider,
+            () => _upgradeService.PlayerHitControlBonus);
 
         _ballRoundService = new BallRoundService(
             ballPhysicsView, _ballService, playerPaddleCollider, enemyPaddleCollider,
             _scorePresenter, ballStartDirection, Vector2.zero);
+
+        _runProgressionService = new RunProgressionService(_ballRoundService);
+        _runProgressionService.UpgradeSelectionRequested += HandleUpgradeSelectionRequested;
+        _runProgressionService.RunFinished += HandleRunFinished;
+
+        if (runUiView == null)
+        {
+            Debug.LogError("RunUiView is not assigned. Run UI integration cannot be used.", this);
+        }
+        else
+        {
+            runUiView.UpgradeSelected += HandleUpgradeSelected;
+            runUiView.RestartRequested += RestartRun;
+            runUiView.MainMenuRequested += ReturnToMainMenu;
+            runUiView.HideUpgradeSelection();
+            runUiView.HideRunResult();
+        }
+
+        // All event subscriptions are ready before the first serve begins.
         _ballService.Launch();
     }
 
-    private void OnDestroy() { _ballHitService?.Dispose(); }
-
     private void Update()
     {
+        if (_runFinished || _waitingForUpgrade)
+            return;
+
         playerMoveController.Tick(Time.deltaTime);
         enemyMoveController.Tick(Time.deltaTime);
         _ballRoundService?.Tick(Time.deltaTime);
+    }
+
+    private void OnDestroy()
+    {
+        if (_runProgressionService != null)
+        {
+            _runProgressionService.UpgradeSelectionRequested -= HandleUpgradeSelectionRequested;
+            _runProgressionService.RunFinished -= HandleRunFinished;
+            _runProgressionService.Dispose();
+        }
+
+        if (runUiView != null)
+        {
+            runUiView.UpgradeSelected -= HandleUpgradeSelected;
+            runUiView.RestartRequested -= RestartRun;
+            runUiView.MainMenuRequested -= ReturnToMainMenu;
+        }
+
+        _ballHitService?.Dispose();
+    }
+
+    private void HandleUpgradeSelectionRequested(int completedMatches)
+    {
+        _waitingForUpgrade = true;
+
+        if (runUiView == null || _upgradeService == null)
+        {
+            Debug.LogError("Cannot show upgrade selection: RunUiView or UpgradeService is missing.", this);
+            return;
+        }
+
+        runUiView.ShowUpgradeOptions(_upgradeService.GetRandomOptions(3));
+    }
+
+    private void HandleUpgradeSelected(UpgradeDefinition upgrade)
+    {
+        if (!_waitingForUpgrade || _runFinished || upgrade == null)
+            return;
+
+        _upgradeService.Apply(upgrade);
+        runUiView.HideUpgradeSelection();
+        _waitingForUpgrade = false;
+        _runProgressionService.ContinueAfterUpgrade();
+    }
+
+    private void HandleRunFinished(bool playerWon)
+    {
+        _runFinished = true;
+        _waitingForUpgrade = false;
+
+        if (runUiView != null)
+            runUiView.ShowRunResult(playerWon);
+    }
+
+    private void RestartRun()
+    {
+        LoadScene("SampleScene");
+    }
+
+    private void ReturnToMainMenu()
+    {
+        LoadScene("MainMenu");
+    }
+
+    private void LoadScene(string sceneName)
+    {
+        if (!Application.CanStreamedLevelBeLoaded(sceneName))
+        {
+            Debug.LogError(
+                $"Cannot load scene '{sceneName}'. Add it to Build Profiles / Build Settings.",
+                this);
+            return;
+        }
+
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(sceneName);
     }
 
     private void InitScore()
@@ -69,9 +179,10 @@ public class GameplayBootstrap : MonoBehaviour
 
     private void InitEnemyMovement()
     {
-        MoveModel model = new MoveModel(4);
-        _botMoveService = new BotMoveService(ballPhysicsView, enemyMoveView, leftWallCollider, rightWallCollider);
-        enemyMoveController = new MoveController(model, enemyMoveView, _botMoveService);
+        _enemyMoveModel = new MoveModel(4);
+        _botMoveService = new BotMoveService(
+            ballPhysicsView, enemyMoveView, leftWallCollider, rightWallCollider);
+        enemyMoveController = new MoveController(_enemyMoveModel, enemyMoveView, _botMoveService);
     }
 
     private void InitPlayer()
@@ -82,9 +193,9 @@ public class GameplayBootstrap : MonoBehaviour
 
     private void InitPlayerMovement()
     {
-        MoveModel model = new MoveModel(4);
+        _playerMoveModel = new MoveModel(4);
         PlayerMoveService moveService = new PlayerMoveService();
-        playerMoveController = new MoveController(model, playerMoveView, moveService);
+        playerMoveController = new MoveController(_playerMoveModel, playerMoveView, moveService);
     }
 
     private void InitEnemyHp()
