@@ -34,6 +34,16 @@ public class GameplayBootstrap : MonoBehaviour
 
     private void Awake()
     {
+        if (runUiView == null)
+        {
+            Debug.LogError(
+                "GameplayBootstrap is missing RunUiView. Open SampleScene and run " +
+                "Tools > PingPong > Install Roguelite Run UI, then save the scene.",
+                this);
+            enabled = false;
+            return;
+        }
+
         InitScore();
         InitPlayer();
         InitEnemy();
