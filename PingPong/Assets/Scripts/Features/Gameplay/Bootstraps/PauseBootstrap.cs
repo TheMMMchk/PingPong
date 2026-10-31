@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
@@ -18,7 +19,12 @@ public sealed class PauseBootstrap : MonoBehaviour
     [Header("Gameplay Dependencies")]
     [SerializeField] private Rigidbody2D ballRigidbody;
 
+    private const float BallResetDelay = 1f;
+
     private PauseService _pauseService;
+    private Vector2 _velocityBeforeReset;
+    private bool _ballResetPending;
+    private Coroutine _ballResetDelayCoroutine;
 
     public bool IsPaused => _pauseService != null && _pauseService.IsPaused;
 
@@ -64,12 +70,17 @@ public sealed class PauseBootstrap : MonoBehaviour
             return;
         }
 
-        Vector2 preservedVelocity = ballRigidbody.linearVelocity;
+        // Preserve the original velocity if the player presses Reset more than once
+        // before the next serve begins.
+        if (!_ballResetPending)
+            _velocityBeforeReset = ballRigidbody.linearVelocity;
 
         // Rigidbody2D.position teleports the body without advancing the physics simulation.
+        // Keep the ball stationary until the reset delay has elapsed after resuming.
         ballRigidbody.position = Vector2.zero;
-        ballRigidbody.linearVelocity = preservedVelocity;
+        ballRigidbody.linearVelocity = Vector2.zero;
         ballRigidbody.angularVelocity = 0f;
+        _ballResetPending = true;
     }
 
     /// <summary>Placeholder for the Settings button. No settings screen is created.</summary>
@@ -91,7 +102,7 @@ public sealed class PauseBootstrap : MonoBehaviour
         {
             Debug.LogError(
                 "Cannot load scene '" + mainMenuSceneName +
-                "'. Check the scene name and add it to Build Profiles / Build Settings.",
+                "'. Check the scene name and add the scene to Build Profiles / Build Settings.",
                 this);
             return;
         }
@@ -110,6 +121,22 @@ public sealed class PauseBootstrap : MonoBehaviour
     private void HandlePauseStateChanged(bool paused)
     {
         pauseStateChanged?.Invoke(paused);
+
+        if (!paused && _ballResetPending && _ballResetDelayCoroutine == null)
+            _ballResetDelayCoroutine = StartCoroutine(RestoreBallVelocityAfterDelay());
+    }
+
+    private IEnumerator RestoreBallVelocityAfterDelay()
+    {
+        // WaitForSeconds uses scaled time, so the delay pauses again if the player
+        // reopens the pause menu before the countdown finishes.
+        yield return new WaitForSeconds(BallResetDelay);
+
+        if (ballRigidbody != null && _ballResetPending)
+            ballRigidbody.linearVelocity = _velocityBeforeReset;
+
+        _ballResetPending = false;
+        _ballResetDelayCoroutine = null;
     }
 
     private void OnDestroy()
