@@ -15,6 +15,9 @@ public sealed class PauseBootstrap : MonoBehaviour
     [Header("UI Integration")]
     [SerializeField] private UnityEvent<bool> pauseStateChanged = new UnityEvent<bool>();
 
+    [Header("Gameplay Dependencies")]
+    [SerializeField] private Rigidbody2D ballRigidbody;
+
     private PauseService _pauseService;
 
     public bool IsPaused => _pauseService != null && _pauseService.IsPaused;
@@ -40,6 +43,35 @@ public sealed class PauseBootstrap : MonoBehaviour
         _pauseService?.Resume();
     }
 
+    /// <summary>
+    /// Moves the ball to the arena center without resuming the game.
+    /// Its current linear velocity is retained so it continues in the same direction
+    /// and at the same speed when the pause is released.
+    /// </summary>
+    public void ResetBallToCenter()
+    {
+        if (!IsPaused)
+        {
+            Debug.LogWarning("The ball can only be reset while the game is paused.", this);
+            return;
+        }
+
+        if (ballRigidbody == null)
+        {
+            Debug.LogError(
+                "PauseBootstrap is missing Ball Rigidbody. Run Tools > PingPong > Install Pause System In Open Scene.",
+                this);
+            return;
+        }
+
+        Vector2 preservedVelocity = ballRigidbody.linearVelocity;
+
+        // Rigidbody2D.position teleports the body without advancing the physics simulation.
+        ballRigidbody.position = Vector2.zero;
+        ballRigidbody.linearVelocity = preservedVelocity;
+        ballRigidbody.angularVelocity = 0f;
+    }
+
     /// <summary>Placeholder for the Settings button. No settings screen is created.</summary>
     public void OpenSettings()
     {
@@ -59,7 +91,7 @@ public sealed class PauseBootstrap : MonoBehaviour
         {
             Debug.LogError(
                 "Cannot load scene '" + mainMenuSceneName +
-                "'. Check the scene name and add the scene to Build Profiles / Build Settings.",
+                "'. Check the scene name and add it to Build Profiles / Build Settings.",
                 this);
             return;
         }

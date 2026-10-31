@@ -9,22 +9,25 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// Installs the pause runtime component and its pause-only overlay into the open gameplay scene.
+/// Installs or updates the pause overlay in the open gameplay scene.
+/// The same command also removes the obsolete Health HUD objects.
 /// It never creates or edits the main menu or a settings screen.
 /// </summary>
 public static class PauseSystemInstaller
 {
     private const string PauseCanvasName = "PauseMenuCanvas";
+    private const float PanelWidth = 560f;
+    private const float PanelHeight = 700f;
 
     [MenuItem("Tools/PingPong/Install Pause System In Open Scene")]
     private static void InstallPauseSystem()
     {
         Scene scene = SceneManager.GetActiveScene();
-        if (!scene.IsValid() || !scene.isLoaded)
+        if (!scene.IsValid() || !scene.isLoaded || scene.name != "SampleScene")
         {
             EditorUtility.DisplayDialog(
                 "Pause System",
-                "Open the gameplay scene first, then run this command again.",
+                "Open SampleScene first, then run this command again. The installer only modifies the gameplay scene.",
                 "OK");
             return;
         }
@@ -37,26 +40,30 @@ public static class PauseSystemInstaller
             bootstrap = Undo.AddComponent<PauseBootstrap>(pauseSystem);
         }
 
+        EnsureEventSystem(scene);
+        AssignBallRigidbody(bootstrap, scene);
+
         GameObject existingCanvas = FindPauseCanvas(scene);
-        if (existingCanvas != null)
+        GameObject pauseCanvas;
+        if (existingCanvas == null)
+            pauseCanvas = CreatePauseMenu(bootstrap);
+        else
         {
-            Selection.activeGameObject = existingCanvas;
-            EditorUtility.DisplayDialog(
-                "Pause System",
-                "The pause UI already exists in this scene. Select PauseMenuCanvas to inspect it.",
-                "OK");
-            return;
+            pauseCanvas = existingCanvas;
+            UpdateExistingPauseMenu(existingCanvas, bootstrap);
         }
 
-        EnsureEventSystem(scene);
-        GameObject pauseCanvas = CreatePauseMenu(bootstrap);
+        int removedHealthObjects = RemoveHealthHud(scene);
+        removedHealthObjects += RemoveHealthHudObjectsByComponentName(scene);
+
         EditorSceneManager.MarkSceneDirty(scene);
         EditorUtility.SetDirty(bootstrap);
         Selection.activeGameObject = pauseCanvas;
 
         Debug.Log(
-            "Pause menu UI created in scene '" + scene.name +
-            "'. Save the scene. Press Escape in Play Mode to show the pause screen.");
+            "Pause menu installed/updated in scene '" + scene.name +
+            "'. Reset Ball is wired, and " + removedHealthObjects +
+            " obsolete Health HUD object(s) were removed. Save SampleScene.");
     }
 
     private static PauseBootstrap FindPauseBootstrap(Scene scene)
@@ -81,7 +88,8 @@ public static class PauseSystemInstaller
             Transform[] children = root.GetComponentsInChildren<Transform>(true);
             foreach (Transform child in children)
             {
-                if (child.name == PauseCanvasName && child.GetComponent<Canvas>() != null)
+                if (child != null && child.name == PauseCanvasName
+                    && child.GetComponent<Canvas>() != null)
                     return child.gameObject;
             }
         }
@@ -103,6 +111,75 @@ public static class PauseSystemInstaller
             typeof(InputSystemUIInputModule));
         Undo.RegisterCreatedObjectUndo(eventSystem, "Create UI Event System");
         SceneManager.MoveGameObjectToScene(eventSystem, scene);
+    }
+
+    private static void AssignBallRigidbody(PauseBootstrap bootstrap, Scene scene)
+    {
+        Rigidbody2D ballRigidbody = FindBallRigidbody(scene);
+        if (ballRigidbody == null)
+        {
+            Debug.LogError(
+                "Pause System Installer could not find the Rigidbody2D assigned to a BallPhysicsView. " +
+                "Assign Ball Rigidbody manually in the PauseBootstrap Inspector.",
+                bootstrap);
+            return;
+        }
+
+        SerializedObject serializedBootstrap = new SerializedObject(bootstrap);
+        SerializedProperty ballProperty = serializedBootstrap.FindProperty("ballRigidbody");
+        if (ballProperty == null)
+        {
+            Debug.LogError("PauseBootstrap.ballRigidbody was not found. Recompile the project and rerun the installer.", bootstrap);
+            return;
+        }
+
+        if (ballProperty.objectReferenceValue == ballRigidbody)
+            return;
+
+        Undo.RecordObject(bootstrap, "Assign Pause Ball Rigidbody");
+        ballProperty.objectReferenceValue = ballRigidbody;
+        serializedBootstrap.ApplyModifiedProperties();
+        EditorUtility.SetDirty(bootstrap);
+    }
+
+    private static Rigidbody2D FindBallRigidbody(Scene scene)
+    {
+        Rigidbody2D foundRigidbody = null;
+
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            BallPhysicsView[] ballViews = root.GetComponentsInChildren<BallPhysicsView>(true);
+            foreach (BallPhysicsView ballView in ballViews)
+            {
+                if (ballView == null)
+                    continue;
+
+                SerializedObject serializedBall = new SerializedObject(ballView);
+                SerializedProperty rigidbodyProperty = serializedBall.FindProperty("_rigidbody");
+                Rigidbody2D candidate = rigidbodyProperty != null
+                    ? rigidbodyProperty.objectReferenceValue as Rigidbody2D
+                    : null;
+
+                if (candidate == null)
+                    candidate = ballView.GetComponent<Rigidbody2D>();
+
+                if (candidate == null)
+                    continue;
+
+                if (foundRigidbody != null && foundRigidbody != candidate)
+                {
+                    Debug.LogError(
+                        "More than one BallPhysicsView with a Rigidbody2D was found. " +
+                        "Assign the intended ball Rigidbody manually in PauseBootstrap.",
+                        ballView);
+                    return null;
+                }
+
+                foundRigidbody = candidate;
+            }
+        }
+
+        return foundRigidbody;
     }
 
     private static GameObject CreatePauseMenu(PauseBootstrap bootstrap)
@@ -140,7 +217,7 @@ public static class PauseSystemInstaller
 
         GameObject panel = CreateUIObject("PausePanel", overlay.transform);
         RectTransform panelRect = panel.GetComponent<RectTransform>();
-        SetCenteredRect(panelRect, Vector2.zero, new Vector2(560f, 620f));
+        SetCenteredRect(panelRect, Vector2.zero, new Vector2(PanelWidth, PanelHeight));
 
         Image panelImage = panel.AddComponent<Image>();
         ApplyUISprite(panelImage, uiSprite);
@@ -166,39 +243,194 @@ public static class PauseSystemInstaller
         accentImage.raycastTarget = false;
 
         CreateText(panel.transform, "Title", "ПАУЗА", font, 48, FontStyle.Bold,
-            Color.white, new Vector2(0f, 215f), new Vector2(470f, 74f));
+            Color.white, new Vector2(0f, 250f), new Vector2(470f, 74f));
 
         CreateText(panel.transform, "Subtitle", "ИГРА ПРИОСТАНОВЛЕНА", font, 16, FontStyle.Normal,
-            new Color(0.62f, 0.72f, 0.84f, 1f), new Vector2(0f, 161f), new Vector2(440f, 32f));
+            new Color(0.62f, 0.72f, 0.84f, 1f), new Vector2(0f, 196f), new Vector2(440f, 32f));
 
-        Button continueButton = CreateButton(
+        CreateButton(
             panel.transform, "ContinueButton", "Продолжить", font, uiSprite,
-            new Vector2(0f, 62f), new Color(0.12f, 0.31f, 0.48f, 1f),
+            new Vector2(0f, 105f), new Color(0.12f, 0.31f, 0.48f, 1f),
             new Color(0.36f, 0.83f, 1f, 1f), bootstrap.ContinueGame);
 
-        Button settingsButton = CreateButton(
+        CreateButton(
             panel.transform, "SettingsButton", "Настройки", font, uiSprite,
-            new Vector2(0f, -34f), new Color(0.13f, 0.16f, 0.22f, 1f),
+            new Vector2(0f, 9f), new Color(0.13f, 0.16f, 0.22f, 1f),
             new Color(0.43f, 0.53f, 0.66f, 1f), bootstrap.OpenSettings);
 
-        Button menuButton = CreateButton(
+        CreateButton(
+            panel.transform, "ResetBallButton", "Сбросить мяч", font, uiSprite,
+            new Vector2(0f, -87f), new Color(0.16f, 0.25f, 0.32f, 1f),
+            new Color(0.35f, 0.83f, 1f, 1f), bootstrap.ResetBallToCenter);
+
+        CreateButton(
             panel.transform, "ReturnToMenuButton", "Выход в меню", font, uiSprite,
-            new Vector2(0f, -130f), new Color(0.23f, 0.14f, 0.18f, 1f),
+            new Vector2(0f, -183f), new Color(0.23f, 0.14f, 0.18f, 1f),
             new Color(1f, 0.43f, 0.43f, 1f), bootstrap.ReturnToMenu);
 
         CreateText(panel.transform, "EscapeHint", "ESC  —  продолжить игру", font, 14, FontStyle.Normal,
-            new Color(0.55f, 0.63f, 0.74f, 1f), new Vector2(0f, -251f), new Vector2(440f, 26f));
+            new Color(0.55f, 0.63f, 0.74f, 1f), new Vector2(0f, -282f), new Vector2(440f, 26f));
 
         // The entire dimmed overlay starts hidden and follows the pause state.
         overlay.SetActive(false);
         UnityEventTools.AddPersistentListener<bool>(bootstrap.PauseStateChanged, overlay.SetActive);
 
-        EditorUtility.SetDirty(continueButton);
-        EditorUtility.SetDirty(settingsButton);
-        EditorUtility.SetDirty(menuButton);
         EditorUtility.SetDirty(bootstrap);
-
         return canvasObject;
+    }
+
+    private static void UpdateExistingPauseMenu(GameObject canvasObject, PauseBootstrap bootstrap)
+    {
+        Transform panel = FindDescendant(canvasObject.transform, "PausePanel");
+        if (panel == null)
+        {
+            Debug.LogError(
+                "PauseMenuCanvas exists, but its PausePanel was not found. " +
+                "The existing menu was left untouched to avoid creating a duplicate.",
+                canvasObject);
+            return;
+        }
+
+        RectTransform panelRect = panel.GetComponent<RectTransform>();
+        if (panelRect != null)
+        {
+            Undo.RecordObject(panelRect, "Resize Pause Menu Panel");
+            SetCenteredRect(panelRect, panelRect.anchoredPosition, new Vector2(PanelWidth, PanelHeight));
+            EditorUtility.SetDirty(panelRect);
+        }
+
+        SetButtonPosition(panel, "ContinueButton", new Vector2(0f, 105f));
+        SetButtonPosition(panel, "SettingsButton", new Vector2(0f, 9f));
+        SetButtonPosition(panel, "ReturnToMenuButton", new Vector2(0f, -183f));
+
+        Transform resetTransform = panel.Find("ResetBallButton");
+        if (resetTransform == null)
+        {
+            Sprite uiSprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (font == null)
+                font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+
+            Button resetButton = CreateButton(
+                panel, "ResetBallButton", "Сбросить мяч", font, uiSprite,
+                new Vector2(0f, -87f), new Color(0.16f, 0.25f, 0.32f, 1f),
+                new Color(0.35f, 0.83f, 1f, 1f), bootstrap.ResetBallToCenter, true);
+            EnsureResetButtonListener(resetButton, bootstrap);
+        }
+        else
+        {
+            SetButtonPosition(panel, "ResetBallButton", new Vector2(0f, -87f));
+            Button resetButton = resetTransform.GetComponent<Button>();
+            if (resetButton == null)
+                Debug.LogError("ResetBallButton exists but has no Button component.", resetTransform);
+            else
+                EnsureResetButtonListener(resetButton, bootstrap);
+        }
+
+        Transform hint = panel.Find("EscapeHint");
+        if (hint != null)
+        {
+            RectTransform hintRect = hint.GetComponent<RectTransform>();
+            if (hintRect != null)
+            {
+                Undo.RecordObject(hintRect, "Move Pause Menu Hint");
+                SetCenteredRect(hintRect, new Vector2(0f, -282f), hintRect.sizeDelta);
+                EditorUtility.SetDirty(hintRect);
+            }
+        }
+
+        EditorUtility.SetDirty(bootstrap);
+    }
+
+    private static void EnsureResetButtonListener(Button button, PauseBootstrap bootstrap)
+    {
+        for (int i = 0; i < button.onClick.GetPersistentEventCount(); i++)
+        {
+            if (button.onClick.GetPersistentTarget(i) == bootstrap
+                && button.onClick.GetPersistentMethodName(i) == nameof(PauseBootstrap.ResetBallToCenter))
+                return;
+        }
+
+        Undo.RecordObject(button, "Connect Reset Ball Button");
+        UnityEventTools.AddPersistentListener(button.onClick, bootstrap.ResetBallToCenter);
+        EditorUtility.SetDirty(button);
+    }
+
+    private static void SetButtonPosition(Transform panel, string buttonName, Vector2 position)
+    {
+        Transform buttonTransform = panel.Find(buttonName);
+        if (buttonTransform == null)
+            return;
+
+        RectTransform buttonRect = buttonTransform.GetComponent<RectTransform>();
+        if (buttonRect == null)
+            return;
+
+        Undo.RecordObject(buttonRect, "Arrange Pause Menu Buttons");
+        SetCenteredRect(buttonRect, position, buttonRect.sizeDelta);
+        EditorUtility.SetDirty(buttonRect);
+    }
+
+    private static Transform FindDescendant(Transform parent, string objectName)
+    {
+        if (parent == null)
+            return null;
+
+        foreach (Transform child in parent)
+        {
+            if (child.name == objectName)
+                return child;
+
+            Transform nested = FindDescendant(child, objectName);
+            if (nested != null)
+                return nested;
+        }
+
+        return null;
+    }
+
+    private static int RemoveHealthHud(Scene scene)
+    {
+        int removedObjects = 0;
+
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
+            for (int i = transforms.Length - 1; i >= 0; i--)
+            {
+                Transform current = transforms[i];
+                if (current == null)
+                    continue;
+
+                if (current.name == "HpText" || current.name == "HealthView")
+                {
+                    Undo.DestroyObjectImmediate(current.gameObject);
+                    removedObjects++;
+                }
+            }
+        }
+
+        return removedObjects;
+    }
+
+    private static int RemoveHealthHudObjectsByComponentName(Scene scene)
+    {
+        int removedObjects = 0;
+
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            MonoBehaviour[] behaviours = root.GetComponentsInChildren<MonoBehaviour>(true);
+            foreach (MonoBehaviour behaviour in behaviours)
+            {
+                if (behaviour != null && behaviour.GetType().Name == "HealthView")
+                {
+                    Undo.DestroyObjectImmediate(behaviour.gameObject);
+                    removedObjects++;
+                }
+            }
+        }
+
+        return removedObjects;
     }
 
     private static Button CreateButton(
@@ -210,10 +442,14 @@ public static class PauseSystemInstaller
         Vector2 position,
         Color backgroundColor,
         Color accentColor,
-        UnityAction onClick)
+        UnityAction onClick,
+        bool registerUndo = false)
     {
         GameObject buttonObject = CreateUIObject(
             objectName, parent, typeof(Image), typeof(Button));
+
+        if (registerUndo)
+            Undo.RegisterCreatedObjectUndo(buttonObject, "Create Reset Ball Button");
 
         RectTransform buttonRect = buttonObject.GetComponent<RectTransform>();
         SetCenteredRect(buttonRect, position, new Vector2(410f, 72f));
