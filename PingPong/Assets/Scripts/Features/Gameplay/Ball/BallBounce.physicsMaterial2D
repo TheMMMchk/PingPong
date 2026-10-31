@@ -9,6 +9,6 @@ PhysicsMaterial2D:
   m_Name: BallBounce
   serializedVersion: 1
   m_Friction: 0
-  m_Bounciness: 1
+  m_Bounciness: 0
   m_FrictionCombine: 0
   m_BounceCombine: 3

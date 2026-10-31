@@ -39,6 +39,7 @@ public class BallHitService : IDisposable
         Vector2 point = collision.contactCount > 0 ? collision.GetContact(0).point : _physicsView.Position;
         if (other == _leftWall || other == _rightWall)
         {
+            _physicsView.BounceFromWall(collision);
             _impactView.PlayWallHit(point);
             return;
         }

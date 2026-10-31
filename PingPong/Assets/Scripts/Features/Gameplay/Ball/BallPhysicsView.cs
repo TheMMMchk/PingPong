@@ -14,6 +14,7 @@ public class BallPhysicsView : MonoBehaviour
     private float _targetSpeed;
     private float _speedMultiplier = 1f;
     private float _attackSpeedMultiplier = 1f;
+    private Vector2 _velocityBeforePhysicsStep;
 
     public Vector2 Position => _rigidbody.position;
     public Vector2 Velocity => _rigidbody.linearVelocity;
@@ -28,7 +29,12 @@ public class BallPhysicsView : MonoBehaviour
     {
         Vector2 velocity = _rigidbody.linearVelocity;
         if (_targetSpeed > 0f && velocity.sqrMagnitude > 0.0001f)
-            _rigidbody.linearVelocity = velocity.normalized * _targetSpeed;
+        {
+            velocity = velocity.normalized * _targetSpeed;
+            _rigidbody.linearVelocity = velocity;
+        }
+
+        _velocityBeforePhysicsStep = _rigidbody.linearVelocity;
     }
 
     public void Launch(Vector2 velocity)
@@ -37,11 +43,13 @@ public class BallPhysicsView : MonoBehaviour
         _attackSpeedMultiplier = 1f;
         _targetSpeed = CalculateTargetSpeed();
         _rigidbody.linearVelocity = velocity.normalized * _targetSpeed;
+        _velocityBeforePhysicsStep = _rigidbody.linearVelocity;
     }
 
     public void StopAtCenter(Vector2 center)
     {
         _rigidbody.linearVelocity = Vector2.zero;
+        _velocityBeforePhysicsStep = Vector2.zero;
         _rigidbody.angularVelocity = 0f;
         _rigidbody.position = center;
         _attackSpeedMultiplier = 1f;
@@ -66,6 +74,37 @@ public class BallPhysicsView : MonoBehaviour
         {
             _rigidbody.linearVelocity = _rigidbody.linearVelocity.normalized * _targetSpeed;
         }
+
+        _velocityBeforePhysicsStep = _rigidbody.linearVelocity;
+    }
+
+    /// <summary>
+    /// Reflects the velocity captured before the current physics step.
+    /// Wall restitution is handled here instead of by Unity Physics 2D.
+    /// </summary>
+    public void BounceFromWall(Collision2D collision)
+    {
+        if (_targetSpeed <= 0f || _velocityBeforePhysicsStep.sqrMagnitude < 0.0001f
+            || collision.contactCount == 0)
+            return;
+
+        Vector2 normal = Vector2.zero;
+        for (int i = 0; i < collision.contactCount; i++)
+        {
+            Vector2 contactNormal = collision.GetContact(i).normal;
+            if (Mathf.Abs(contactNormal.x) > Mathf.Abs(normal.x))
+                normal = contactNormal;
+        }
+
+        // Side walls have a horizontal contact normal. Ignore corner contacts.
+        if (Mathf.Abs(normal.x) < 0.9f)
+            return;
+
+        Vector2 reflectedVelocity = Vector2.Reflect(
+            _velocityBeforePhysicsStep, normal.normalized);
+
+        _rigidbody.linearVelocity = reflectedVelocity.normalized * _targetSpeed;
+        _velocityBeforePhysicsStep = _rigidbody.linearVelocity;
     }
 
     public bool BounceFromPaddle(Collider2D paddle, float paddleVelocityX,
@@ -114,6 +153,7 @@ public class BallPhysicsView : MonoBehaviour
         _attackSpeedMultiplier = 1f + 0.1f * attackQuality;
         _targetSpeed = CalculateTargetSpeed();
         _rigidbody.linearVelocity = direction * _targetSpeed;
+        _velocityBeforePhysicsStep = _rigidbody.linearVelocity;
         return attackQuality >= 0.7f;
     }
 
