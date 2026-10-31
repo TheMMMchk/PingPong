@@ -110,8 +110,16 @@ public class BallPhysicsView : MonoBehaviour
     public bool BounceFromPaddle(Collider2D paddle, float paddleVelocityX,
         float movementInfluenceBonus = 0f)
     {
-        Vector2 velocity = _rigidbody.linearVelocity;
-        if (_baseSpeed <= 0f || velocity.sqrMagnitude < 0.0001f)
+        const float minimumVelocitySqr = 0.0001f;
+
+        // Collision callbacks can observe a temporarily zeroed Rigidbody velocity.
+        // Prefer the value captured before the physics solver processed the collision.
+        Vector2 incomingVelocity = _velocityBeforePhysicsStep.sqrMagnitude >= minimumVelocitySqr
+            ? _velocityBeforePhysicsStep
+            : _rigidbody.linearVelocity;
+
+        if (_baseSpeed <= 0f || _targetSpeed <= 0f
+            || incomingVelocity.sqrMagnitude < minimumVelocitySqr)
             return false;
 
         float paddleHalfWidth = paddle.bounds.extents.x;
@@ -144,7 +152,7 @@ public class BallPhysicsView : MonoBehaviour
             direction.Normalize();
         }
 
-        float edgePrecision = Mathf.InverseLerp(0.8f, 1f, Mathf.Abs(hitOffset));
+        float edgePrecision = Mathf.InverseLerp(0.7f, 1f, Mathf.Abs(hitOffset));
         float movementPrecision = Mathf.InverseLerp(1.5f, maxPaddleSpeed, Mathf.Abs(paddleVelocityX));
         bool movingTowardShot = Mathf.Abs(paddleVelocityX) > 0.01f
             && Mathf.Sign(paddleVelocityX) == Mathf.Sign(hitOffset);
