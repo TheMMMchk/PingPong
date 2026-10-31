@@ -1,31 +1,33 @@
 # Pause menu UI integration
 
-This branch owns the pause overlay only. The main menu is a separate feature and is deliberately not created or edited here. The Settings button is present as a placeholder; no settings screen or transition is implemented.
+The pause overlay is installed and updated from the gameplay scene only. The main menu is a separate feature and is not changed by this installer. The Settings button remains a placeholder.
 
-## Install or add the missing UI
+## Install or update the pause UI
 
-1. Pull/checkout the latest `feature/pause-menu` branch and let Unity finish recompiling scripts.
-2. Open the gameplay scene (`SampleScene` in the current project).
+1. Open the gameplay scene (SampleScene).
+2. Wait for Unity to finish recompiling scripts.
 3. Run **Tools > PingPong > Install Pause System In Open Scene**.
-4. The installer reuses an existing `PauseBootstrap` and creates `PauseMenuCanvas` only if it does not exist.
-5. Save the scene. If asked, save changes to `SampleScene`.
+4. The installer reuses the existing PauseBootstrap and PauseMenuCanvas. When the canvas already exists, it updates the existing pause panel and adds the Reset Ball button only if it is missing. It does not create a duplicate canvas or replace the existing Continue, Settings, and Return to Menu handlers.
+5. The installer assigns the ball's Rigidbody2D to PauseBootstrap > Ball Rigidbody by reading the BallPhysicsView reference in the open scene.
+6. The same command removes the obsolete HpText and HealthView scene objects.
+7. Save SampleScene.
 
-The command is safe to rerun: it will not add a second pause canvas. It only creates pause-related UI in the gameplay scene and does not alter the existing HUD, gameplay objects, main menu, or settings scene.
+The installer uses Undo for created and changed scene objects and marks the active scene dirty. Run it again safely if the menu needs to be refreshed.
 
-## Result
+## Controls
 
-- Press `Escape` in Play Mode to open or close the overlay.
-- **Продолжить** resumes the game.
-- **Настройки** calls `OpenSettings()`, which currently logs a warning and does not open a screen.
-- **В меню** loads the scene name configured in `PauseBootstrap > Main Menu Scene Name`. Set this field to the exact scene name provided by the separate main-menu branch, and ensure that scene is included in Build Profiles / Build Settings.
+- Press Escape in Play Mode to open or close the pause overlay.
+- Продолжить resumes the game.
+- Сбросить мяч teleports the ball to (0, 0) while keeping the game paused. It preserves the current linear velocity and clears angular velocity. Press Продолжить to resume movement from the center.
+- Настройки calls OpenSettings(), which currently logs a warning and does not open a screen.
+- В меню loads the scene name configured in PauseBootstrap > Main Menu Scene Name. Ensure that scene is included in Build Profiles / Build Settings.
 
-The overlay is hidden when the scene starts. Its visibility is bound to the `PauseStateChanged` event. It uses a Screen Space Overlay canvas, a dimmed backdrop, a centered pause card, and three buttons.
+## If the menu does not appear
 
-## If the screen still does not appear
+- Confirm the Console shows no compile errors.
+- Confirm PauseMenuCanvas exists in the Hierarchy and the scene is saved.
+- Enter Play Mode and press Escape.
+- Confirm the scene contains an EventSystem with an Input System UI Input Module. The installer creates one only when there is no EventSystem.
+- Confirm PauseBootstrap > Ball Rigidbody references the ball's Rigidbody2D.
 
-- Confirm that Console shows no compile errors after switching branches.
-- Confirm `PauseMenuCanvas` exists in the Hierarchy and the scene is saved.
-- Enter Play Mode and press `Escape`.
-- Confirm the scene contains an EventSystem with an Input System UI Input Module (the installer creates one only if there is no EventSystem).
-
-The repository change adds the editor installer code, but it cannot execute Unity Editor on GitHub. Run the installer locally to create the scene objects.
+The installer code is committed in the repository, but it must be run in Unity Editor to apply and save scene-object changes. Play Mode validation also requires running the project in Unity locally.

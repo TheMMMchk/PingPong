@@ -3,7 +3,6 @@ using UnityEngine.SceneManagement;
 
 public class GameplayBootstrap : MonoBehaviour
 {
-    [SerializeField] private HealthView playerHpView;
     [SerializeField] private ScoreView scoreView;
     [SerializeField] private MoveView playerMoveView;
     [SerializeField] private MoveView enemyMoveView;
@@ -177,7 +176,6 @@ public class GameplayBootstrap : MonoBehaviour
     private void InitEnemy()
     {
         InitEnemyMovement();
-        InitEnemyHp();
     }
 
     private void InitEnemyMovement()
@@ -191,7 +189,6 @@ public class GameplayBootstrap : MonoBehaviour
     private void InitPlayer()
     {
         InitPlayerMovement();
-        InitPlayerHp();
     }
 
     private void InitPlayerMovement()
@@ -199,18 +196,5 @@ public class GameplayBootstrap : MonoBehaviour
         _playerMoveModel = new MoveModel(4);
         PlayerMoveService moveService = new PlayerMoveService();
         playerMoveController = new MoveController(_playerMoveModel, playerMoveView, moveService);
-    }
-
-    private void InitEnemyHp()
-    {
-        HealthModel model = new HealthModel(50);
-        HealthPresenter presenter = new HealthPresenter(model);
-    }
-
-    private void InitPlayerHp()
-    {
-        HealthModel model = new HealthModel(50);
-        HealthPresenter presenter = new HealthPresenter(model, playerHpView);
-        presenter.UpdateHpText();
     }
 }
