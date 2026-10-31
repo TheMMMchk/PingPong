@@ -18,7 +18,7 @@ The installer uses Undo for created and changed scene objects and marks the acti
 
 - Press Escape in Play Mode to open or close the pause overlay.
 - Продолжить resumes the game.
-- Сбросить мяч teleports the ball to (0, 0) while keeping the game paused. It preserves the current linear velocity and clears angular velocity. Press Продолжить to resume movement from the center.
+- Сбросить мяч teleports the ball to (0, 0) while keeping the game paused. It stores the current linear velocity, keeps the ball stationary, and clears angular velocity. After Продолжить (or unpausing with Escape), the ball waits 1 second before continuing with its stored velocity. The delay uses scaled time and pauses if the game is paused again.
 - Настройки calls OpenSettings(), which currently logs a warning and does not open a screen.
 - В меню loads the scene name configured in PauseBootstrap > Main Menu Scene Name. Ensure that scene is included in Build Profiles / Build Settings.
 
