@@ -92,7 +92,6 @@ public static class MainMenuUXExperimentSceneGenerator
 
     private static void BuildScene()
     {
-        CreateMenuSystem();
         EventSystem eventSystem = CreateEventSystem();
 
         GameObject canvasObject = CreateObject(
@@ -119,7 +118,7 @@ public static class MainMenuUXExperimentSceneGenerator
             64f,
             96f,
             FontStyles.Bold,
-            new Vector2(0f, 0f),
+            new Vector2(0f, 130f),
             new Vector2(0f, -290f),
             new Vector2(0.10f, 1f),
             new Vector2(0.90f, 1f),
@@ -273,24 +272,21 @@ public static class MainMenuUXExperimentSceneGenerator
 
         CreateAnchoredImage(
             court.transform, "LeftPaddle", Hex("#8DDFC8"),
-            Vector2.zero, Vector2.zero,
-            new Vector2(0f, 0.5f), new Vector2(12f, 116f), new Vector2(24f, -18f),
-            new Vector2(0f, 0.5f));
+            new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+            new Vector2(0f, 0.5f), new Vector2(12f, 116f), new Vector2(24f, -18f));
 
         CreateAnchoredImage(
             court.transform, "RightPaddle", Hex("#F58D75"),
             new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-            new Vector2(1f, 0.5f), new Vector2(12f, 116f), new Vector2(-24f, 18f),
-            new Vector2(1f, 0.5f));
+            new Vector2(1f, 0.5f), new Vector2(12f, 116f), new Vector2(-24f, 18f));
 
-        Image ball = CreateCenteredImage(
+        CreateCenteredImage(
             court.transform,
             "ArenaBall",
             Hex("#E8EF78"),
             new Vector2(18f, 18f),
             new Vector2(290f, 55f),
             45f);
-        ball.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 45f);
     }
 
     private static Button CreateButton(
@@ -537,8 +533,7 @@ public static class MainMenuUXExperimentSceneGenerator
         Vector2 anchorMax,
         Vector2 pivot,
         Vector2 size,
-        Vector2 position,
-        Vector2? explicitPivot = null)
+        Vector2 position)
     {
         GameObject imageObject = CreateObject(
             objectName,
@@ -549,7 +544,7 @@ public static class MainMenuUXExperimentSceneGenerator
         RectTransform rect = imageObject.GetComponent<RectTransform>();
         rect.anchorMin = anchorMin;
         rect.anchorMax = anchorMax;
-        rect.pivot = explicitPivot ?? pivot;
+        rect.pivot = pivot;
         rect.sizeDelta = size;
         rect.anchoredPosition = position;
         rect.localScale = Vector3.one;
